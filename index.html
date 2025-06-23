@@ -39,6 +39,31 @@
             border-radius: 10px;
             text-align: center;
             backdrop-filter: blur(10px);
+            transition: opacity 0.3s ease;
+        }
+        
+        #settings.hidden {
+            display: none;
+        }
+        
+        #settingsToggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            padding: 10px 15px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            opacity: 0.5;
+        }
+        
+        #settingsToggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            opacity: 1;
         }
         
         .setting-group {
@@ -109,10 +134,10 @@
     
     <div id="status"></div>
     
-    <div id="settings">
+    <div id="settings" class="hidden">
         <div class="setting-group">
             <label for="wakeTime">Wake up time:</label>
-            <input type="time" id="wakeTime" value="07:00">
+            <input type="time" id="wakeTime" value="06:30">
         </div>
         
         <div class="setting-group">
@@ -127,10 +152,12 @@
         </div>
     </div>
     
+    <button id="settingsToggle" onclick="toggleSettings()">⚙️</button>
+    
     <script>
         // Store settings in memory
         let settings = {
-            wakeTime: '07:00',
+            wakeTime: '06:30',
             duration: 60
         };
         
@@ -175,6 +202,14 @@
             settings.wakeTime = document.getElementById('wakeTime').value;
             settings.duration = parseInt(document.getElementById('duration').value);
             alert('Settings saved! The clock will turn green at ' + settings.wakeTime + ' for ' + settings.duration + ' minutes.');
+            
+            // Hide settings after saving
+            document.getElementById('settings').classList.add('hidden');
+        }
+        
+        function toggleSettings() {
+            const settingsEl = document.getElementById('settings');
+            settingsEl.classList.toggle('hidden');
         }
         
         // Initialize settings from inputs
