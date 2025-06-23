@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a1a2e">
     <title>OK to Wake Clock</title>
     <style>
         body {
@@ -151,10 +152,12 @@
             
             const statusEl = document.getElementById('status');
             const body = document.body;
+            const themeColor = document.querySelector('meta[name="theme-color"]');
             
             if (currentMinutes >= wakeMinutes && currentMinutes < endMinutes) {
                 body.classList.add('wake-time');
                 statusEl.innerHTML = '<div class="wake-message">🌞 Good morning! Time to wake up! 🌞</div>';
+                themeColor.content = '#2ecc71'; // Green for wake time
             } else {
                 body.classList.remove('wake-time');
                 if (currentMinutes < wakeMinutes) {
@@ -164,6 +167,7 @@
                 } else {
                     statusEl.textContent = '🌙 Sleep time';
                 }
+                themeColor.content = '#1a1a2e'; // Dark blue for sleep time
             }
         }
         
