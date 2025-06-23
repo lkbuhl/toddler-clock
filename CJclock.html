@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OK to Wake Clock</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            transition: background-color 0.5s ease;
+            background-color: #1a1a2e;
+            color: white;
+            overflow: hidden;
+        }
+        
+        body.wake-time {
+            background-color: #2ecc71;
+        }
+        
+        #clock {
+            font-size: clamp(60px, 15vw, 120px);
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        #settings {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .setting-group {
+            margin: 15px 0;
+        }
+        
+        label {
+            display: inline-block;
+            width: 150px;
+            text-align: right;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        
+        input[type="time"], input[type="number"] {
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            width: 120px;
+        }
+        
+        #status {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: 500;
+            min-height: 30px;
+        }
+        
+        .wake-message {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #2980b9;
+        }
+        
+        #tip {
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.8;
+            text-align: center;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div id="clock"></div>
+    
+    <div id="status"></div>
+    
+    <div id="settings">
+        <div class="setting-group">
+            <label for="wakeTime">Wake up time:</label>
+            <input type="time" id="wakeTime" value="07:00">
+        </div>
+        
+        <div class="setting-group">
+            <label for="duration">Green duration (minutes):</label>
+            <input type="number" id="duration" min="1" max="180" value="60">
+        </div>
+        
+        <button onclick="saveSettings()">Save Settings</button>
+        
+        <div id="tip">
+            💡 Tip: To keep screen on, go to Settings → Display & Brightness → Auto-Lock → Never
+        </div>
+    </div>
+    
+    <script>
+        // Store settings in memory
+        let settings = {
+            wakeTime: '07:00',
+            duration: 60
+        };
+        
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            
+            document.getElementById('clock').textContent = `${hours}:${minutes}`;
+            
+            checkWakeTime(now);
+        }
+        
+        function checkWakeTime(now) {
+            const [wakeHour, wakeMinute] = settings.wakeTime.split(':').map(Number);
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const wakeMinutes = wakeHour * 60 + wakeMinute;
+            const endMinutes = wakeMinutes + settings.duration;
+            
+            const statusEl = document.getElementById('status');
+            const body = document.body;
+            
+            if (currentMinutes >= wakeMinutes && currentMinutes < endMinutes) {
+                body.classList.add('wake-time');
+                statusEl.innerHTML = '<div class="wake-message">🌞 Good morning! Time to wake up! 🌞</div>';
+            } else {
+                body.classList.remove('wake-time');
+                if (currentMinutes < wakeMinutes) {
+                    const hoursLeft = Math.floor((wakeMinutes - currentMinutes) / 60);
+                    const minutesLeft = (wakeMinutes - currentMinutes) % 60;
+                    statusEl.textContent = `💤 Sleep time - ${hoursLeft}h ${minutesLeft}m until wake time`;
+                } else {
+                    statusEl.textContent = '🌙 Sleep time';
+                }
+            }
+        }
+        
+        function saveSettings() {
+            settings.wakeTime = document.getElementById('wakeTime').value;
+            settings.duration = parseInt(document.getElementById('duration').value);
+            alert('Settings saved! The clock will turn green at ' + settings.wakeTime + ' for ' + settings.duration + ' minutes.');
+        }
+        
+        // Initialize settings from inputs
+        document.getElementById('wakeTime').value = settings.wakeTime;
+        document.getElementById('duration').value = settings.duration;
+        
+        // Update clock every second
+        updateClock();
+        setInterval(updateClock, 1000);
+        
+        // Prevent screen from going to sleep on mobile
+        // Note: Wake Lock API may not work in all contexts
+        if ('wakeLock' in navigator) {
+            async function requestWakeLock() {
+                try {
+                    await navigator.wakeLock.request('screen');
+                    console.log('Screen wake lock activated');
+                } catch (err) {
+                    // Wake Lock not available - this is normal in many contexts
+                    console.log('Wake Lock not available - please adjust your device settings to keep screen on');
+                }
+            }
+            requestWakeLock();
+            
+            // Re-request wake lock when page becomes visible again
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    requestWakeLock();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
